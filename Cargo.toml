@@ -1,8 +1,16 @@
 [package]
 name = "pugo-rs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["fuxiaohei <fudong0797@gmail.com>"]
+description = "a simple static website generator"
+homepage = "https://pugo.io"
+repository = "https://github.com/fuxiaohei/pugo-rs"
+keywords = ["ssg", "site", "static", "website", "generator"]
+readme = "README.md"
+license = "MIT"
 
 [dependencies]
+clap = { version = "3.2.6", features = ["derive"] }
+env_logger = "0.9.0"
+log = { version = "0.4", features = ["max_level_debug", "release_max_level_warn"] }
