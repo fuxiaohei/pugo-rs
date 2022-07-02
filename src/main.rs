@@ -3,6 +3,7 @@ extern crate log;
 use clap::{Parser, Subcommand};
 
 mod cmd;
+mod models;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -34,7 +35,7 @@ fn main() {
     // run command
     match args.command {
         Commands::Init {} => {
-            println!("Init command");
+            cmd::run_init();
         }
         Commands::Build(args) => {
             println!("Build command");

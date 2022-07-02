@@ -16,3 +16,6 @@ Cargo.lock
 
 # Editor
 .vscode/
+
+# Source
+config.toml
