@@ -1,4 +1,5 @@
 use crate::models;
+use crate::utils;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct DirectoryConfig {
@@ -133,6 +134,30 @@ impl Config {
     pub fn to_file(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let bytes = toml::to_string_pretty(&self)?;
         std::fs::write(path, bytes)?;
+        Ok(())
+    }
+
+    pub fn build_post_uri(&self, filename: &str) -> String {
+        let mut uri = utils::merge_url(&self.directory.source, "posts");
+        uri = utils::merge_url(&uri, filename);
+        uri
+    }
+
+    pub fn build_page_uri(&self, filename: &str) -> String {
+        let mut uri = utils::merge_url(&self.directory.source, "pages");
+        uri = utils::merge_url(&uri, filename);
+        uri
+    }
+
+    pub fn mkdir_all(&self) -> Result<(), Box<dyn std::error::Error>> {
+        std::fs::create_dir_all(&self.directory.source)?;
+        std::fs::create_dir_all(&self.directory.themes)?;
+        std::fs::create_dir_all(&self.directory.output)?;
+        std::fs::create_dir_all(utils::merge_url(&self.directory.source, "posts"))?;
+        std::fs::create_dir_all(utils::merge_url(&self.directory.source, "pages"))?;
+        for asset in &self.directory.assets {
+            std::fs::create_dir_all(utils::merge_url(&self.directory.source, asset))?;
+        }
         Ok(())
     }
 }

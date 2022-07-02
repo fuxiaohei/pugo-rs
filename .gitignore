@@ -19,3 +19,5 @@ Cargo.lock
 
 # Source
 config.toml
+source/
+dist/

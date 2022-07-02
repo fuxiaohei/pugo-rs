@@ -4,6 +4,7 @@ use clap::{Parser, Subcommand};
 
 mod cmd;
 mod models;
+mod utils;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
