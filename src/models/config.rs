@@ -158,6 +158,11 @@ impl Config {
         }
     }
 
+    pub fn build_full_url(&self, url: &str) -> String {
+        let base_url = utils::merge_url(&self.url.base, &self.url.root);
+        utils::merge_url(base_url.as_str(), url)
+    }
+
     pub fn get_posts_dir(&self) -> String {
         utils::merge_url(&self.directory.source, "posts")
     }
@@ -197,5 +202,37 @@ impl Config {
             return models::Author::create_by_name(name);
         }
         author.unwrap().clone()
+    }
+
+    pub fn get_default_author(&self) -> models::Author {
+        self.get_author(&self.site.author)
+    }
+
+    pub fn build_dist_html_filepath(&self, name: &str, with_root: bool) -> String {
+        let mut output = String::from(&self.directory.output);
+        if with_root {
+            output = utils::merge_url(&self.directory.output, &self.url.root)
+        }
+        output = utils::merge_url(&output, name);
+        if !output.ends_with(".html") {
+            output.push_str("/index.html");
+        }
+        output
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_config() {
+        let config = Config::default();
+        assert_eq!(config.get_posts_dir(), "source/posts");
+        assert_eq!(config.get_pages_dir(), "source/pages");
+        assert_eq!(config.build_post_uri("abc"), "source/posts/abc");
+        assert_eq!(
+            config.build_dist_html_filepath("abc", true),
+            "dist/abc/index.html"
+        );
     }
 }

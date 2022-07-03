@@ -6,6 +6,8 @@ pub struct Site {
     pub posts: Vec<models::Post>,
     pub pages: Vec<models::Post>,
     pub tags: Vec<models::Tag>,
+
+    template_vars: models::TemplateVars,
 }
 
 impl Site {
@@ -25,6 +27,7 @@ impl Site {
             posts,
             pages,
             tags: vec![],
+            template_vars: models::TemplateVars::default(),
         };
         site.parse_source()?;
         Ok(site)
@@ -70,10 +73,76 @@ impl Site {
             }
         }
 
+        // 4. after all parsed, generate global template
+        self.template_vars = models::TemplateVars::new(self);
+
         Ok(())
     }
 
     pub fn build(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let mut outputs = vec![];
+        
+        // 1. build posts
+        outputs.extend(self.build_posts()?);
+
+        // 2. build pages
+        self.build_pages()?;
+
+        // 3. build tags
+        self.build_tags()?;
+
+        debug!("Built outputs: {}", outputs.len());
+
+        Ok(())
+    }
+
+    fn build_posts(&self) -> Result<Vec<models::Output>, Box<dyn std::error::Error>> {
+        let mut outputs = vec![];
+
+        // build each post
+        for p in &self.posts {
+            let output_file = self.config.build_dist_html_filepath(&p.slug_url, true);
+            let mut template_vars = self.template_vars.get_global();
+            template_vars.post = Some(self.template_vars.build_postvars(p));
+            outputs.push(models::Output {
+                visit_url: self.config.build_root_url(&p.slug_url),
+                output_file,
+                template_vars,
+                template_file: p.meta.template.as_ref().unwrap().clone(),
+            });
+        }
+
+        // build pagination
+        let pagination = models::Pagination::new(self.posts.len(), self.config.url.per_page_size);
+        for i in 0..pagination.total_pages {
+            let current_page = pagination.build_each_page(i + 1, &self.config.url.post_page_format);
+            let output_file = self
+                .config
+                .build_dist_html_filepath(&current_page.current_url(), true);
+            let mut template_vars = self.template_vars.get_global();
+            template_vars.pagination = Some(current_page.build_template_vars());
+            let posts = &self.posts[current_page.start..current_page.end];
+            let mut posts_vars = Vec::new();
+            for p in posts {
+                let post_vars = self.template_vars.build_postvars(p);
+                posts_vars.push(post_vars);
+            }
+            template_vars.posts = Some(posts_vars);
+            outputs.push(models::Output {
+                visit_url: self.config.build_root_url(&current_page.current_url()),
+                output_file,
+                template_vars,
+                template_file: String::from("posts.hbs"),
+            });
+        }
+        Ok(outputs)
+    }
+
+    fn build_tags(&self) -> Result<(), Box<dyn std::error::Error>> {
+        Ok(())
+    }
+
+    fn build_pages(&self) -> Result<(), Box<dyn std::error::Error>> {
         Ok(())
     }
 }
