@@ -1,6 +1,6 @@
 [package]
 name = "pugo-rs"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 authors = ["fuxiaohei <fudong0797@gmail.com>"]
 description = "a simple static website generator"
@@ -21,3 +21,4 @@ serde_json = "1.0"
 serde_yaml = "0.8"
 toml = "0.5"
 walkdir = "2.3.2"
+pulldown-cmark = { version = "0.9.1", default-features = false }

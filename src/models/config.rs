@@ -149,12 +149,25 @@ impl Config {
         uri
     }
 
+    pub fn build_root_url(&self, url: &str) -> String {
+        let root_url = utils::merge_url(&self.url.root, url);
+        if !root_url.starts_with('/') {
+            format!("/{}", root_url)
+        } else {
+            root_url
+        }
+    }
+
     pub fn get_posts_dir(&self) -> String {
         utils::merge_url(&self.directory.source, "posts")
     }
 
     pub fn get_pages_dir(&self) -> String {
         utils::merge_url(&self.directory.source, "pages")
+    }
+
+    pub fn get_slug_link(&self) -> String {
+        self.build_root_url(&self.url.post_link_format)
     }
 
     pub fn build_page_uri(&self, filename: &str) -> String {
@@ -173,5 +186,16 @@ impl Config {
             std::fs::create_dir_all(utils::merge_url(&self.directory.source, asset))?;
         }
         Ok(())
+    }
+
+    pub fn get_author(&self, name: &str) -> models::Author {
+        if self.author.is_none() {
+            return models::Author::create_by_name(name);
+        }
+        let author = self.author.as_ref().unwrap().get(name);
+        if author.is_none() {
+            return models::Author::create_by_name(name);
+        }
+        author.unwrap().clone()
     }
 }

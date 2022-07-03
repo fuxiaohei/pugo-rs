@@ -3,6 +3,12 @@ use crate::models;
 use log::{debug, error, info};
 
 pub fn run_build(args: cmd::BuildArgs) {
+    let start = std::time::Instant::now();
+    run_build_site(args);
+    info!("Loaded site successfully, eplased: {:?}", start.elapsed());
+}
+
+pub fn run_build_site(args: cmd::BuildArgs) {
     info!("Building start");
 
     let config_file = "config.toml";
@@ -29,8 +35,6 @@ pub fn run_build(args: cmd::BuildArgs) {
             start_watch(&site.config.directory, &args);
         }
     }
-
-    info!("Loaded site successfully");
 }
 
 pub fn start_watch(dir_config: &models::DirectoryConfig, build_args: &cmd::BuildArgs) {

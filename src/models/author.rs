@@ -1,4 +1,4 @@
-#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Author {
     pub name: String,
     pub email: String,
@@ -10,6 +10,12 @@ pub struct Author {
 }
 
 impl Author {
+    pub fn create_by_name(name: &str) -> Author {
+        Author {
+            name: name.to_string(),
+            ..Author::default()
+        }
+    }
     pub fn default() -> Self {
         let mut author = Author {
             name: "writer".to_string(),
