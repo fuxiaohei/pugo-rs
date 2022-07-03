@@ -137,10 +137,24 @@ impl Config {
         Ok(())
     }
 
+    pub fn from_file(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let bytes = std::fs::read(path)?;
+        let cfg = toml::from_slice(&bytes)?;
+        Ok(cfg)
+    }
+
     pub fn build_post_uri(&self, filename: &str) -> String {
         let mut uri = utils::merge_url(&self.directory.source, "posts");
         uri = utils::merge_url(&uri, filename);
         uri
+    }
+
+    pub fn get_posts_dir(&self) -> String {
+        utils::merge_url(&self.directory.source, "posts")
+    }
+
+    pub fn get_pages_dir(&self) -> String {
+        utils::merge_url(&self.directory.source, "pages")
     }
 
     pub fn build_page_uri(&self, filename: &str) -> String {

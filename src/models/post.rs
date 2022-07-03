@@ -1,5 +1,6 @@
 use crate::models;
 use chrono::Datelike;
+use log::debug;
 
 pub fn parse_time(time_str: &str) -> Result<chrono::NaiveDateTime, Box<dyn std::error::Error>> {
     let mut time_text = time_str.trim().to_string();
@@ -133,6 +134,28 @@ impl Post {
         let mut post = Post::from_str(&content)?;
         post.local_file = file_path.to_string();
         Ok(post)
+    }
+
+    pub fn list_from_dir(dir_path: &str) -> Result<Vec<Post>, Box<dyn std::error::Error>> {
+        let mut posts = Vec::new();
+        for entry in walkdir::WalkDir::new(dir_path) {
+            let entry = entry.unwrap();
+            let post_file_path = entry.path();
+            let post_file_path_str = post_file_path.to_str().unwrap();
+            if post_file_path.is_file() && post_file_path.extension().unwrap() == "md" {
+                let post = match Post::from_file(post_file_path_str) {
+                    Ok(post) => post,
+                    Err(e) => {
+                        return Err(e);
+                    }
+                };
+                posts.push(post);
+                debug!("Loaded source: {}", post_file_path_str);
+            }
+        }
+        // sort by date
+        posts.sort_by(|a, b| b.datetime.unwrap().cmp(&a.datetime.unwrap()));
+        Ok(posts)
     }
 
     pub fn to_file(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
