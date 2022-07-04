@@ -168,7 +168,7 @@ impl TemplateVars {
         self.cache_global_vars.as_ref().unwrap().clone()
     }
 
-    fn get_tag(&self, tag: &str) -> Option<TagVars> {
+    pub fn get_tag(&self, tag: &str) -> Option<TagVars> {
         self.cache_tags.get(tag).cloned()
     }
 
