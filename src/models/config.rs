@@ -56,7 +56,7 @@ impl ThemeConfig {
     pub fn new() -> ThemeConfig {
         Self {
             name: "default".to_string(),
-            index_template: "posts.html".to_string(),
+            index_template: "posts.hbs".to_string(),
             assets_dir: ["static".to_string()].to_vec(),
         }
     }
@@ -169,6 +169,10 @@ impl Config {
 
     pub fn get_pages_dir(&self) -> String {
         utils::merge_url(&self.directory.source, "pages")
+    }
+
+    pub fn get_theme_dir(&self) -> String {
+        utils::merge_url(self.directory.themes.as_str(), self.theme.name.as_str())
     }
 
     pub fn get_slug_link(&self) -> String {

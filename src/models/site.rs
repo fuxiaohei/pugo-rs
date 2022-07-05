@@ -1,16 +1,17 @@
 use crate::models;
 use log::{debug, info};
 
-pub struct Site {
+pub struct Site<'a> {
     pub config: models::Config,
     pub posts: Vec<models::Post>,
     pub pages: Vec<models::Post>,
     pub tags: Vec<models::Tag>,
+    pub theme: models::Theme<'a>,
 
     template_vars: models::TemplateVars,
 }
 
-impl Site {
+impl Site<'_> {
     pub fn load(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
         // 1. read config
         let config = models::Config::from_file(path)?;
@@ -22,12 +23,18 @@ impl Site {
         let pages = models::Post::list_from_dir(&config.get_pages_dir())?;
         info!("Loaded pages: {}", pages.len());
 
+        // 3. parse theme
+        let theme_dir = config.get_theme_dir();
+        let theme = models::Theme::parse(&theme_dir)?;
+        info!("Loaded theme: {}", &theme_dir);
+
         let mut site = Site {
             config,
             posts,
             pages,
             tags: vec![],
             template_vars: models::TemplateVars::default(),
+            theme: theme,
         };
         site.parse_source()?;
         Ok(site)
@@ -95,11 +102,11 @@ impl Site {
         outputs.extend(self.build_index()?);
 
         // 5. generate files
-        self.generate_files(&outputs)?;
+        let generated_count = self.generate_files(&outputs)?;
 
         // 6. copy static files
 
-        debug!("Generate files: {}", outputs.len());
+        debug!("Generate files: {}", generated_count);
 
         Ok(())
     }
@@ -240,14 +247,16 @@ impl Site {
     fn generate_files(
         &self,
         outputs: &Vec<models::Output>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<usize, Box<dyn std::error::Error>> {
+        let mut count = 0;
         for output in outputs {
-            debug!(
-                "Generate file: {:?}, url: {:?}",
-                output.output_files, output.visit_url
-            );
+            for file in &output.output_files {
+                count += 1;
+                self.theme
+                    .render(&output.template_file, file, &output.template_vars)?;
+            }
         }
-        Ok(())
+        Ok(count)
     }
 }
 

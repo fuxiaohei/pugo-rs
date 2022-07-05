@@ -10,6 +10,7 @@ mod post;
 pub use post::Post;
 
 mod theme;
+pub use theme::Theme;
 pub use theme::ThemeEmbedAssets;
 
 mod site;
@@ -20,8 +21,8 @@ pub use tag::Tag;
 
 mod tplvars;
 pub use tplvars::GlobalVars;
-pub use tplvars::TemplateVars;
 pub use tplvars::PaginationVars;
+pub use tplvars::TemplateVars;
 
 mod output;
 pub use output::Output;
