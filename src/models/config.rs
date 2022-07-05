@@ -1,7 +1,7 @@
 use crate::models;
 use crate::utils;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DirectoryConfig {
     pub source: String,
     pub output: String,
@@ -56,7 +56,7 @@ impl ThemeConfig {
     pub fn new() -> ThemeConfig {
         Self {
             name: "default".to_string(),
-            index_template: "posts.hbs".to_string(),
+            index_template: "posts.html".to_string(),
             assets_dir: ["static".to_string()].to_vec(),
         }
     }

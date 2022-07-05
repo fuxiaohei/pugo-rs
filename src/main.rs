@@ -42,8 +42,7 @@ fn main() {
             cmd::run_build(args);
         }
         Commands::Serve(args) => {
-            println!("Serve command");
-            println!("{:?}", args);
+            cmd::run_serve(args);
         }
     }
 }
