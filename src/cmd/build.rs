@@ -46,7 +46,7 @@ pub fn run_build_site(
 pub fn start_watch(dir_config: &models::DirectoryConfig, build_args: &cmd::BuildArgs) {
     let (send, recv) = channel();
     let dirs = vec![dir_config.source.to_string(), dir_config.themes.to_string()];
-    let args = build_args.clone();
+    let args = *build_args;
 
     // use time ticker to handle duplicated events
     std::thread::spawn(move || {

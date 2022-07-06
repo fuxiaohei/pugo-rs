@@ -1,5 +1,5 @@
 use crate::models;
-use log::{debug, info};
+use log::{debug, error, info};
 
 pub struct Site<'a> {
     pub config: models::Config,
@@ -34,7 +34,7 @@ impl Site<'_> {
             pages,
             tags: vec![],
             template_vars: models::TemplateVars::default(),
-            theme: theme,
+            theme,
         };
         site.parse_source()?;
         Ok(site)
@@ -55,7 +55,7 @@ impl Site<'_> {
             if p.meta.language.is_none() {
                 p.meta.language = Some(self.config.site.language.clone());
             }
-            p.author = Some(self.config.get_author(&p.meta.author.as_ref().unwrap()));
+            p.author = Some(self.config.get_author(p.meta.author.as_ref().unwrap()));
             p.brief_html = markdown_to_html(&p.brief_markdown);
             p.content_html = markdown_to_html(&p.content_markdown);
         }
@@ -72,7 +72,7 @@ impl Site<'_> {
             // page's brief is empty
             // p.brief_html = markdown_to_html(&p.brief_markdown);
             p.content_html = markdown_to_html(&p.content_markdown);
-            p.author = Some(self.config.get_author(&p.meta.author.as_ref().unwrap()));
+            p.author = Some(self.config.get_author(p.meta.author.as_ref().unwrap()));
 
             // use page.hbs instead of post.hbs as default post
             if p.meta.template.as_ref().unwrap() == "post.hbs" {
@@ -105,6 +105,7 @@ impl Site<'_> {
         let generated_count = self.generate_files(&outputs)?;
 
         // 6. copy static files
+        self.copy_assets();
 
         debug!("Generate files: {}", generated_count);
 
@@ -214,14 +215,12 @@ impl Site<'_> {
         let output_file = self.config.build_dist_html_filepath("index.html", true);
 
         // set outputs
-        let mut outputs = vec![];
-        outputs.push(models::Output {
+        let outputs = vec![models::Output {
             visit_url: self.config.build_root_url("index.html"),
             output_files: vec![output_file],
             template_vars,
             template_file: self.config.theme.index_template.clone(),
-        });
-
+        }];
         Ok(outputs)
     }
 
@@ -258,6 +257,21 @@ impl Site<'_> {
         }
         Ok(count)
     }
+
+    fn copy_assets(&self) {
+        let copy_dirs = self.config.build_assets_dirs();
+        for (src, dst) in copy_dirs {
+            if std::fs::metadata(&src).is_err() {
+                debug!("Copied {}, but does not exist", src);
+                continue;
+            }
+            std::fs::create_dir_all(&dst).unwrap();
+            match copy_dir_all(&src, &dst) {
+                Ok(_) => debug!("Copied {} to {}", src, dst),
+                Err(e) => error!("Copy failed {} to {}: {}", src, dst, e),
+            }
+        }
+    }
 }
 
 pub fn markdown_to_html(content: &str) -> String {
@@ -270,4 +284,21 @@ pub fn markdown_to_html(content: &str) -> String {
     let parser = cmark::Parser::new_ext(content, options);
     cmark::html::push_html(&mut buf, parser);
     buf
+}
+
+pub fn copy_dir_all(
+    src: impl AsRef<std::path::Path>,
+    dst: impl AsRef<std::path::Path>,
+) -> std::io::Result<()> {
+    std::fs::create_dir_all(&dst)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        } else {
+            std::fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        }
+    }
+    Ok(())
 }

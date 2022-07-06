@@ -13,7 +13,7 @@ fn build_tag_link(tag: &str, format: &str) -> String {
 }
 
 impl Tag {
-    pub fn parse(posts: &Vec<models::Post>, url_config: &models::UrlConfig) -> Vec<Tag> {
+    pub fn parse(posts: &[models::Post], url_config: &models::UrlConfig) -> Vec<Tag> {
         let mut tags = std::collections::HashMap::new();
         for (index, p) in posts.iter().enumerate() {
             for t in p.meta.tags.as_ref().unwrap() {

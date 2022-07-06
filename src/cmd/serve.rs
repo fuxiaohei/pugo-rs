@@ -12,7 +12,7 @@ pub fn run_serve(args: cmd::ServerArgs) {
     };
     // build first, then start server
     let site = cmd::run_build_site(build_args).unwrap();
-    start_server(site.config.directory.output.clone(), args.port).unwrap();
+    start_server(site.config.directory.output, args.port).unwrap();
 }
 
 #[actix_web::main]

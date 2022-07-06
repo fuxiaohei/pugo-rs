@@ -19,7 +19,7 @@ impl AuthorVars {
             social: a.social.clone(),
         };
         if let Some(social) = &a.social {
-            if social.len() > 0 {
+            if !social.is_empty() {
                 author_vars.has_social = true;
             }
             for (k, v) in social {
@@ -176,7 +176,7 @@ impl TemplateVars {
         let mut post_vars = PostVars {
             title: p.meta.title.clone(),
             permalink: p.slug_url.clone(),
-            author: AuthorVars::new(&p.author.as_ref().unwrap()),
+            author: AuthorVars::new(p.author.as_ref().unwrap()),
             date: p.meta.date.clone(),
             updated: p.meta.updated.as_ref().unwrap().clone(),
             brief: p.brief_html.clone(),

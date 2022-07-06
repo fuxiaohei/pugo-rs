@@ -212,16 +212,36 @@ impl Config {
         self.get_author(&self.site.author)
     }
 
-    pub fn build_dist_html_filepath(&self, name: &str, with_root: bool) -> String {
+    fn get_output_dir(&self, with_root: bool) -> String {
         let mut output = String::from(&self.directory.output);
         if with_root {
             output = utils::merge_url(&self.directory.output, &self.url.root)
         }
+        output
+    }
+
+    pub fn build_dist_html_filepath(&self, name: &str, with_root: bool) -> String {
+        let mut output = self.get_output_dir(with_root);
         output = utils::merge_url(&output, name);
         if !output.ends_with(".html") {
             output.push_str("/index.html");
         }
         output
+    }
+
+    pub fn build_assets_dirs(&self) -> std::collections::HashMap<String, String> {
+        let mut assets_dirs = std::collections::HashMap::new();
+        for dir in &self.directory.assets {
+            let src = utils::merge_url(&self.directory.source, dir);
+            let output = utils::merge_url(&self.get_output_dir(true), dir);
+            assets_dirs.insert(src, output);
+        }
+        for dir in &self.theme.assets_dir {
+            let src = utils::merge_url(&self.get_theme_dir(), dir);
+            let output = utils::merge_url(&self.get_output_dir(true), dir);
+            assets_dirs.insert(src, output);
+        }
+        assets_dirs
     }
 }
 
