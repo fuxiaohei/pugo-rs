@@ -18,12 +18,12 @@ impl Author {
     }
     pub fn default() -> Self {
         let mut author = Author {
-            name: "writer".to_string(),
-            email: "writer@example.com".to_string(),
+            name: "author".to_string(),
+            email: "author@example.com".to_string(),
             website: "https://pugo.io".to_string(),
             bio: "sample author of PuGo".to_string(),
-            avatar: "".to_string(),
-            use_gravatar: true,
+            avatar: "/assets/avatar.png".to_string(),
+            use_gravatar: false,
             social: Some(std::collections::HashMap::new()),
         };
         author.social.as_mut().unwrap().insert(

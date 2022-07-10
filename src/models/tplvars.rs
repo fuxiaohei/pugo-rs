@@ -3,6 +3,7 @@ use crate::models;
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AuthorVars {
     pub name: String,
+    pub bio: String,
     pub url: String,
     pub avatar: String,
     pub has_social: bool,
@@ -13,6 +14,7 @@ impl AuthorVars {
     pub fn new(a: &models::Author) -> AuthorVars {
         let mut author_vars = AuthorVars {
             name: a.name.clone(),
+            bio: a.bio.clone(),
             url: a.website.clone(),
             avatar: a.build_avatar_url(),
             has_social: false,
@@ -84,10 +86,17 @@ pub struct PaginationVars {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct NavVars {
+    pub name: String,
+    pub url: String,
+    // pub children: Option<Vec<NavVars>>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GlobalVars {
     pub site: SiteVars,
     pub author: AuthorVars,
-    // pub navs: Vec<Nav>,
+    pub navs: Vec<NavVars>,
     pub tags: Option<Vec<TagVars>>,
     pub current_tag: Option<TagVars>,
     pub pagination: Option<PaginationVars>,
@@ -110,15 +119,15 @@ impl GlobalVars {
                 full_url: site.config.build_full_url(""),
             },
             author: AuthorVars::default(),
-            /*navs: site
-            .config
-            .nav
-            .iter()
-            .map(|nav| Nav {
-                name: nav.name.clone(),
-                url: site.config.url.root_url(nav.url.as_str()),
-            })
-            .collect(),*/
+            navs: site
+                .config
+                .nav
+                .iter()
+                .map(|nav| NavVars {
+                    name: nav.name.clone(),
+                    url: site.config.build_root_url(&nav.url),
+                })
+                .collect(),
             current_tag: None,
             tags: None,
             pagination: None,

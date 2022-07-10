@@ -47,7 +47,7 @@ pub fn start_watch(dir_config: &models::DirectoryConfig, build_args: &cmd::Build
     let (send, recv) = channel();
     let dirs = vec![dir_config.source.to_string(), dir_config.themes.to_string()];
     let mut args = *build_args;
-    
+
     // close watching when watching triggered
     args.watch = false;
 

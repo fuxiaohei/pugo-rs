@@ -1,6 +1,6 @@
 [package]
 name = "pugo-rs"
-version = "0.1.11"
+version = "0.1.12"
 edition = "2021"
 authors = ["fuxiaohei <fudong0797@gmail.com>"]
 description = "a simple static website generator"

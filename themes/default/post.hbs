@@ -1,21 +1,40 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hello Post!</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  </head>
-  <body>
-  <section class="section">
-    <div class="container">
-      <h1 class="title">
-        Hello Post
-      </h1>
-      <p class="subtitle">
-        My first website with <strong>Bulma</strong>!
-      </p>
+
+{{> partials/meta.hbs}}
+
+<body>
+  {{> partials/header.hbs}}
+  <main class="main">
+    <div class="main-container">
+      <div class="main-left-container">
+        <article class="post-container">
+          <h3 class="post-title"><a href="{{post.permalink}}">{{post.title}}</a></h3>
+          <div class="post-meta">
+            <span class="post-date">{{date_format post.datetime}}</span>
+            <span class="post-meta-gap">|</span>
+            <span class="post-author">{{post.author.name}}</span>
+            {{#each post.tags}}
+            <span class="post-meta-gap">|</span>
+            <a href="{{url}}" class="post-tag">#{{name}}</a>
+            {{/each}}
+          </div>
+          <div class="post-content">{{{post.content}}}</div>
+          {{#if post.comments}}
+          <section class="post-comment comment">
+            <div class="comment-closed"> Comment is enabled</div>
+          </section>
+          {{else}}
+          <section class="post-comment">
+            <div class="comment-closed"> Comment is closed</div>
+          </section>
+          {{/if}}
+        </article>
+      </div>
+      {{> partials/sidebar.hbs}}
     </div>
-  </section>
-  </body>
+  </main>
+  {{> partials/footer.hbs}}
+</body>
+
 </html>

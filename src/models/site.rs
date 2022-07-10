@@ -211,9 +211,9 @@ impl Site<'_> {
             let post_vars = self.template_vars.build_postvars(p);
             posts_vars.push(post_vars);
         }
+        template_vars.posts = Some(posts_vars);
 
         let output_file = self.config.build_dist_html_filepath("index.html", true);
-
         // set outputs
         let outputs = vec![models::Output {
             visit_url: self.config.build_root_url("index.html"),
@@ -231,7 +231,7 @@ impl Site<'_> {
         for p in &self.pages {
             let output_file = self.config.build_dist_html_filepath(&p.slug_url, true);
             let mut template_vars = self.template_vars.get_global();
-            template_vars.post = Some(self.template_vars.build_postvars(p));
+            template_vars.page = Some(self.template_vars.build_postvars(p));
             outputs.push(models::Output {
                 visit_url: self.config.build_root_url(&p.slug_url),
                 output_files: vec![output_file],
