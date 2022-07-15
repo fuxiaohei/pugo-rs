@@ -54,14 +54,15 @@ mod tests {
     #[test]
     fn test_avatar_url() {
         let mut author = Author::default();
-        assert_eq!(author.name, "writer");
+        assert_eq!(author.name, "author");
+
+        author.avatar = String::from("avatar.png");
+        assert_eq!(author.build_avatar_url(), "avatar.png");
+
+        author.use_gravatar = true;
         assert_eq!(
             author.build_avatar_url(),
-            "https://www.gravatar.com/avatar/876f6a6c274d1f94238c26ce721dcc31"
+            "https://www.gravatar.com/avatar/5c1e6d6e64e12aca17657581a48005d1"
         );
-
-        author.use_gravatar = false;
-        author.avatar = String::from("avatar.jpg");
-        assert_eq!(author.build_avatar_url(), "avatar.jpg");
     }
 }

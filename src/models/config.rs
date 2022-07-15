@@ -220,9 +220,14 @@ impl Config {
         output
     }
 
-    pub fn build_dist_html_filepath(&self, name: &str, with_root: bool) -> String {
+    pub fn build_dist_filepath(&self, name: &str, with_root: bool) -> String {
         let mut output = self.get_output_dir(with_root);
         output = utils::merge_url(&output, name);
+        output
+    }
+
+    pub fn build_dist_html_filepath(&self, name: &str, with_root: bool) -> String {
+        let mut output = self.build_dist_filepath(name, with_root);
         if !output.ends_with(".html") {
             output.push_str("/index.html");
         }

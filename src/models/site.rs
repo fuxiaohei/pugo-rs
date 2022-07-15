@@ -1,4 +1,5 @@
 use crate::models;
+use chrono::{Local, TimeZone, Utc};
 use log::{debug, error, info};
 
 pub struct Site<'a> {
@@ -101,8 +102,11 @@ impl Site<'_> {
         // 4. build index
         outputs.extend(self.build_index()?);
 
+        // 5. build rss
+        outputs.extend(self.build_rss()?);
+
         // 5. generate files
-        let generated_count = self.generate_files(&outputs)?;
+        let generated_count = self.generate_files(&mut outputs)?;
 
         // 6. copy static files
         self.copy_assets();
@@ -120,11 +124,16 @@ impl Site<'_> {
             let output_file = self.config.build_dist_html_filepath(&p.slug_url, true);
             let mut template_vars = self.template_vars.get_global();
             template_vars.post = Some(self.template_vars.build_postvars(p));
+
+            let dt = Utc.from_local_datetime(&p.datetime.unwrap()).unwrap();
             outputs.push(models::Output {
                 visit_url: self.config.build_root_url(&p.slug_url),
                 output_files: vec![output_file],
                 template_vars,
                 template_file: p.meta.template.as_ref().unwrap().clone(),
+                file_content: "".to_string(),
+                lastmod: dt,
+                sitemap_priority: 0.8,
             });
         }
 
@@ -144,11 +153,17 @@ impl Site<'_> {
                 posts_vars.push(post_vars);
             }
             template_vars.posts = Some(posts_vars);
+            let dt = Utc
+                .from_local_datetime(&posts[0].datetime.unwrap())
+                .unwrap();
             outputs.push(models::Output {
                 visit_url: self.config.build_root_url(&current_page.current_url()),
                 output_files: vec![output_file],
                 template_vars,
                 template_file: String::from("posts.hbs"),
+                file_content: "".to_string(),
+                lastmod: dt,
+                sitemap_priority: 0.7,
             });
         }
         Ok(outputs)
@@ -179,11 +194,17 @@ impl Site<'_> {
                 }
                 template_vars.posts = Some(posts_vars);
 
+                let dt = Utc
+                    .from_local_datetime(&self.posts[tag.posts_index[0]].datetime.unwrap())
+                    .unwrap();
                 let mut output = models::Output {
                     visit_url: self.config.build_root_url(&current_page.current_url()),
                     output_files: vec![output_file],
                     template_vars,
                     template_file: String::from("posts.hbs"),
+                    file_content: "".to_string(),
+                    lastmod: dt,
+                    sitemap_priority: 0.7,
                 };
                 if i == 0 {
                     let tag_index_output_file =
@@ -215,11 +236,58 @@ impl Site<'_> {
 
         let output_file = self.config.build_dist_html_filepath("index.html", true);
         // set outputs
+        let dt = Utc
+            .from_local_datetime(&posts[0].datetime.unwrap())
+            .unwrap();
         let outputs = vec![models::Output {
             visit_url: self.config.build_root_url("index.html"),
             output_files: vec![output_file],
             template_vars,
             template_file: self.config.theme.index_template.clone(),
+            file_content: "".to_string(),
+            lastmod: dt,
+            sitemap_priority: 1.0,
+        }];
+        Ok(outputs)
+    }
+
+    fn build_rss(&self) -> Result<Vec<models::Output>, Box<dyn std::error::Error>> {
+        use rss::{ChannelBuilder, ItemBuilder};
+        // add post items
+        let mut items = Vec::new();
+        for post in &self.posts {
+            let dt = Local.from_local_datetime(&post.datetime.unwrap()).unwrap();
+            let full_link = self.config.build_full_url(&post.slug_url);
+            let item = ItemBuilder::default()
+                .title(post.meta.title.clone())
+                .link(full_link)
+                .content(post.content_html.clone())
+                .pub_date(dt.to_rfc2822())
+                .build();
+            items.push(item);
+        }
+        // build channel
+        let channel = ChannelBuilder::default()
+            .title(self.config.site.title.as_str())
+            .link(self.config.build_full_url(""))
+            .items(items)
+            .description(self.config.site.description.as_str())
+            .build();
+
+        // set outputs
+        let output_url = "atom.xml";
+        let output_file = self.config.build_dist_filepath(output_url, true);
+        let dt = Utc
+            .from_local_datetime(&self.posts[0].datetime.unwrap())
+            .unwrap();
+        let outputs = vec![models::Output {
+            visit_url: self.config.build_root_url(output_url),
+            output_files: vec![output_file],
+            template_vars: self.template_vars.get_global(),
+            template_file: "".to_string(),
+            file_content: channel.to_string(),
+            lastmod: dt,
+            sitemap_priority: 0.8,
         }];
         Ok(outputs)
     }
@@ -232,11 +300,15 @@ impl Site<'_> {
             let output_file = self.config.build_dist_html_filepath(&p.slug_url, true);
             let mut template_vars = self.template_vars.get_global();
             template_vars.page = Some(self.template_vars.build_postvars(p));
+            let dt = Utc.from_local_datetime(&p.datetime.unwrap()).unwrap();
             outputs.push(models::Output {
                 visit_url: self.config.build_root_url(&p.slug_url),
                 output_files: vec![output_file],
                 template_vars,
                 template_file: p.meta.template.as_ref().unwrap().clone(),
+                file_content: "".to_string(),
+                lastmod: dt,
+                sitemap_priority: 0.7,
             });
         }
 
@@ -245,14 +317,54 @@ impl Site<'_> {
 
     fn generate_files(
         &self,
-        outputs: &Vec<models::Output>,
+        outputs: &mut Vec<models::Output>,
     ) -> Result<usize, Box<dyn std::error::Error>> {
         let mut count = 0;
+
+        // generate sitemap
+        let mut urls = Vec::new();
+        for output in outputs.iter_mut() {
+            let entry = sitewriter::UrlEntry {
+                loc: self
+                    .config
+                    .build_full_url(&output.visit_url)
+                    .parse()
+                    .unwrap(),
+                changefreq: Some(sitewriter::ChangeFreq::Weekly),
+                priority: Some(output.sitemap_priority),
+                lastmod: Some(output.lastmod),
+            };
+            urls.push(entry);
+        }
+        let sitemap_outputfile = self.config.build_dist_filepath("sitemap.xml", true);
+        let dt = Utc
+            .from_local_datetime(&self.posts[0].datetime.unwrap())
+            .unwrap();
+        let sitemap_output = models::Output {
+            visit_url: self.config.build_root_url("sitemap.xml"),
+            output_files: vec![sitemap_outputfile],
+            template_vars: self.template_vars.get_global(),
+            template_file: "".to_string(),
+            file_content: sitewriter::generate_str(&urls),
+            lastmod: dt,
+            sitemap_priority: 0.5,
+        };
+        outputs.push(sitemap_output);
+
+        // generate output files
         for output in outputs {
             for file in &output.output_files {
                 count += 1;
-                self.theme
-                    .render(&output.template_file, file, &output.template_vars)?;
+                debug!("Generated file: {}", file);
+                // write file content directly
+                if !output.file_content.is_empty() {
+                    let output_dir = std::path::Path::new(file).parent().unwrap();
+                    std::fs::create_dir_all(output_dir)?;
+                    std::fs::write(file, &output.file_content)?;
+                } else {
+                    self.theme
+                        .render(&output.template_file, file, &output.template_vars)?;
+                }
             }
         }
         Ok(count)
