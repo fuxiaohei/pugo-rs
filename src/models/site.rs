@@ -384,6 +384,22 @@ impl Site<'_> {
             }
         }
     }
+
+    pub fn archive(&self) -> Result<String, Box<dyn std::error::Error>> {
+        use flate2::write::GzEncoder;
+        use flate2::Compression;
+
+        let outputdir = self.config.get_output_dir(false);
+        let filename = chrono::Local::now().format("%Y-%m-%d-%H-%M-%S.tar.gz").to_string();
+        let tar_gz = std::fs::File::create(&filename)?;
+        let enc = GzEncoder::new(tar_gz, Compression::default());
+        let mut tar = tar::Builder::new(enc);
+        tar.append_dir_all(&outputdir, &outputdir)?;
+        tar.finish()?;
+
+        debug!("Create archive: {}", filename);
+        Ok(filename)
+    }
 }
 
 pub fn markdown_to_html(content: &str) -> String {

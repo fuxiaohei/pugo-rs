@@ -29,6 +29,14 @@ pub fn run_build_site(
         Err(err) => error!("Build failed: {}", err),
     }
 
+    if args.archive {
+        info!("Archiving start");
+        match site.archive() {
+            Ok(filename) => info!("Archive success : {}", filename),
+            Err(err) => error!("Archive failed: {}", err),
+        }
+    }
+
     let directory_config = site.config.directory.clone();
     if args.watch {
         if args.watch_in_spawn {

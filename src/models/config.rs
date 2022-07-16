@@ -212,7 +212,7 @@ impl Config {
         self.get_author(&self.site.author)
     }
 
-    fn get_output_dir(&self, with_root: bool) -> String {
+    pub fn get_output_dir(&self, with_root: bool) -> String {
         let mut output = String::from(&self.directory.output);
         if with_root {
             output = utils::merge_url(&self.directory.output, &self.url.root)
