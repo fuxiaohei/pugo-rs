@@ -65,18 +65,31 @@ impl Post {
 
     pub fn from_str(content: &str) -> Result<Post, Box<dyn std::error::Error>> {
         let mut metadata_string = String::from("");
+        let mut metadata_format = "yaml";
         let mut content_string = String::from("");
         let mut metadata_section_flag = false;
         let mut content_lines = content.trim().lines();
         for line in content_lines.by_ref() {
-            // start with ---, enter as metadata
-            if !metadata_section_flag && line == "---" {
-                metadata_section_flag = true;
-                continue;
+            // start with --- or ```toml , enter as metadata
+            if !metadata_section_flag {
+                if line == "---" {
+                    metadata_section_flag = true;
+                    continue;
+                } else if line == "```toml" {
+                    metadata_format = "toml";
+                    metadata_section_flag = true;
+                    continue;
+                }
             }
+
             if metadata_section_flag {
                 // find --- again, metadata is end
-                if line == "---" {
+                if line == "---" && metadata_format == "yaml" {
+                    metadata_section_flag = false;
+                    metadata_string.push('\n');
+                    continue;
+                }
+                if line == "```" && metadata_format == "toml" {
                     metadata_section_flag = false;
                     metadata_string.push('\n');
                     continue;
@@ -90,10 +103,17 @@ impl Post {
             content_string.push('\n');
         }
         let mut post = Post::default();
-        post.meta = serde_yaml::from_str(metadata_string.as_str())?;
+        if metadata_format == "yaml" {
+            post.meta = serde_yaml::from_str(metadata_string.as_str())?;
+        } else if metadata_format == "toml" {
+            post.meta = toml::from_str(metadata_string.as_str())?;
+        }
         post.content_markdown = content_string.trim().to_string();
 
         // fill default values
+        if post.meta.slug.starts_with('/') {
+            post.meta.slug = post.meta.slug.strip_prefix('/').unwrap().to_string();
+        }
         if post.meta.template.is_none() {
             post.meta.template = Some("post.hbs".to_string());
         }
@@ -142,7 +162,7 @@ impl Post {
             let entry = entry.unwrap();
             let post_file_path = entry.path();
             let post_file_path_str = post_file_path.to_str().unwrap();
-            if post_file_path.is_file() && post_file_path.extension().unwrap() == "md" {
+            if post_file_path.is_file() && post_file_path_str.ends_with(".md") {
                 let post = match Post::from_file(post_file_path_str) {
                     Ok(post) => post,
                     Err(e) => {
@@ -252,7 +272,7 @@ Workers Sites leverages the power of Workers and Workers KV by allowing develope
             post.meta.tags.as_ref().unwrap().join(","),
             "cloudflare,blog,workers"
         );
-        assert_eq!(post.meta.template, Some("post.hbs".to_string())); // template is post.html as default if not set
+        assert_eq!(post.meta.template, Some("post.hbs".to_string())); // template is post.hbs as default if not set
         assert_eq!(post.meta.language, None);
         assert_eq!(post.meta.comments, Some(true));
         assert_eq!(post.meta.author, Some("admin".to_string()));

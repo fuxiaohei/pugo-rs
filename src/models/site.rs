@@ -99,8 +99,9 @@ impl Site<'_> {
         // 3. build tags
         outputs.extend(self.build_tags()?);
 
-        // 4. build index
+        // 4. build index and archives
         outputs.extend(self.build_index()?);
+        outputs.extend(self.build_archives()?);
 
         // 5. build rss
         outputs.extend(self.build_rss()?);
@@ -251,6 +252,42 @@ impl Site<'_> {
         Ok(outputs)
     }
 
+    fn build_archives(&self) -> Result<Vec<models::Output>, Box<dyn std::error::Error>> {
+        let archives = models::Archive::parse(&self.posts);
+        let mut archive_vars = vec![];
+        for archive in &archives {
+            let mut posts_vars = vec![];
+            for idx in &archive.posts_index {
+                let post_vars = self.template_vars.build_postvars(&self.posts[*idx]);
+                posts_vars.push(post_vars);
+            }
+            let archive_var = models::ArchiveVars {
+                year: archive.year.clone(),
+                posts: posts_vars,
+            };
+            archive_vars.push(archive_var);
+        }
+
+        let mut template_vars = self.template_vars.get_global();
+        template_vars.archives = Some(archive_vars);
+
+        let dt = Utc
+            .from_local_datetime(&self.posts[0].datetime.unwrap())
+            .unwrap();
+        let output_file = self.config.build_dist_html_filepath("archives", true);
+        let outputs = vec![models::Output {
+            visit_url: self.config.build_root_url("archives"),
+            output_files: vec![output_file],
+            template_vars,
+            template_file: "archives.hbs".to_string(),
+            file_content: "".to_string(),
+            lastmod: dt,
+            sitemap_priority: 0.6,
+        }];
+        
+        Ok(outputs)
+    }
+
     fn build_rss(&self) -> Result<Vec<models::Output>, Box<dyn std::error::Error>> {
         use rss::{ChannelBuilder, ItemBuilder};
         // add post items
@@ -390,7 +427,9 @@ impl Site<'_> {
         use flate2::Compression;
 
         let outputdir = self.config.get_output_dir(false);
-        let filename = chrono::Local::now().format("%Y-%m-%d-%H-%M-%S.tar.gz").to_string();
+        let filename = chrono::Local::now()
+            .format("%Y-%m-%d-%H-%M-%S.tar.gz")
+            .to_string();
         let tar_gz = std::fs::File::create(&filename)?;
         let enc = GzEncoder::new(tar_gz, Compression::default());
         let mut tar = tar::Builder::new(enc);

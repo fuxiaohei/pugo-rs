@@ -93,6 +93,19 @@ pub struct NavVars {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ArchiveVars {
+    pub year: String,
+    pub posts: Vec<PostVars>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppVars {
+    pub name: String,
+    pub version: String,
+    pub repository: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GlobalVars {
     pub site: SiteVars,
     pub author: AuthorVars,
@@ -103,6 +116,8 @@ pub struct GlobalVars {
     pub post: Option<PostVars>,
     pub page: Option<PostVars>,
     pub posts: Option<Vec<PostVars>>,
+    pub archives: Option<Vec<ArchiveVars>>,
+    pub app: AppVars,
 }
 
 impl GlobalVars {
@@ -134,6 +149,12 @@ impl GlobalVars {
             post: None,
             page: None,
             posts: None,
+            archives: None,
+            app: AppVars {
+                name: "PuGo".to_string(),
+                version: crate_version!().to_string(),
+                repository: "https://github.com/fuxiaohei/pugo-rs".to_string(),
+            },
         };
         vars.tags = Some(
             site.tags

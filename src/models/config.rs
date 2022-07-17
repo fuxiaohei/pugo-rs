@@ -56,7 +56,7 @@ impl ThemeConfig {
     pub fn new() -> ThemeConfig {
         Self {
             name: "default".to_string(),
-            index_template: "posts.html".to_string(),
+            index_template: "posts.hbs".to_string(),
             assets_dir: ["static".to_string()].to_vec(),
         }
     }
@@ -116,11 +116,18 @@ impl Config {
             url: UrlConfig::new(),
             directory: DirectoryConfig::new(),
             theme: ThemeConfig::new(),
-            nav: vec![NavConfig {
-                name: "About".to_string(),
-                url: "/about".to_string(),
-                children: None,
-            }],
+            nav: vec![
+                NavConfig {
+                    name: "Archives".to_string(),
+                    url: "/archives".to_string(),
+                    children: None,
+                },
+                NavConfig {
+                    name: "About".to_string(),
+                    url: "/about".to_string(),
+                    children: None,
+                },
+            ],
             author: Some(std::collections::HashMap::new()),
         };
         let author = models::Author::default();

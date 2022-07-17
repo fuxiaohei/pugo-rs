@@ -19,7 +19,7 @@ pub fn run_build_site(
     let site = match models::Site::load(config_file) {
         Ok(site) => site,
         Err(err) => {
-            error!("Build failed: {}", err);
+            error!("Load site failed: {}", err);
             return Err(err);
         }
     };

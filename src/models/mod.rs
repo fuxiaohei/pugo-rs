@@ -23,6 +23,7 @@ mod tplvars;
 pub use tplvars::GlobalVars;
 pub use tplvars::PaginationVars;
 pub use tplvars::TemplateVars;
+pub use tplvars::ArchiveVars;
 
 mod output;
 pub use output::Output;
@@ -30,3 +31,6 @@ pub use output::Output;
 mod pagination;
 pub use pagination::Pagination;
 pub use pagination::PaginationItem;
+
+mod archive;
+pub use archive::Archive;
