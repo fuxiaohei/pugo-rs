@@ -102,6 +102,7 @@ impl Site<'_> {
         // 4. build index and archives
         outputs.extend(self.build_index()?);
         outputs.extend(self.build_archives()?);
+        outputs.extend(self.build_404_page()?);
 
         // 5. build rss
         outputs.extend(self.build_rss()?);
@@ -252,6 +253,24 @@ impl Site<'_> {
         Ok(outputs)
     }
 
+    fn build_404_page(&self) -> Result<Vec<models::Output>, Box<dyn std::error::Error>> {
+        let template_vars = self.template_vars.get_global();
+        let output_file = self.config.build_dist_html_filepath("404", true);
+        let dt = Utc
+            .from_local_datetime(&self.posts[0].datetime.unwrap())
+            .unwrap();
+        let outputs = vec![models::Output {
+            visit_url: self.config.build_root_url("404"),
+            output_files: vec![output_file],
+            template_vars,
+            template_file: "404.hbs".to_string(),
+            file_content: "".to_string(),
+            lastmod: dt,
+            sitemap_priority: 0.0,
+        }];
+        Ok(outputs)
+    }
+
     fn build_archives(&self) -> Result<Vec<models::Output>, Box<dyn std::error::Error>> {
         let archives = models::Archive::parse(&self.posts);
         let mut archive_vars = vec![];
@@ -284,7 +303,6 @@ impl Site<'_> {
             lastmod: dt,
             sitemap_priority: 0.6,
         }];
-        
         Ok(outputs)
     }
 
@@ -361,6 +379,10 @@ impl Site<'_> {
         // generate sitemap
         let mut urls = Vec::new();
         for output in outputs.iter_mut() {
+            // if sitemap priority is set to 0.0, skip it
+            if output.sitemap_priority < 0.01 {
+                continue;
+            }
             let entry = sitewriter::UrlEntry {
                 loc: self
                     .config
@@ -384,7 +406,7 @@ impl Site<'_> {
             template_file: "".to_string(),
             file_content: sitewriter::generate_str(&urls),
             lastmod: dt,
-            sitemap_priority: 0.5,
+            sitemap_priority: 0.0,
         };
         outputs.push(sitemap_output);
 

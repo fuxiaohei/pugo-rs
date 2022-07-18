@@ -18,7 +18,7 @@ pub fn run_serve(args: cmd::ServerArgs) {
 #[actix_web::main]
 async fn start_server(dst_dir: String, port: u16) -> std::io::Result<()> {
     info!("Starting server at http://localhost:{}", port);
-    HttpServer::new(move || App::new().service(Files::new("/", &dst_dir).index_file("index.html")))
+    HttpServer::new(move || {App::new().service(Files::new("/", &dst_dir).index_file("index.html"))})
         .bind(("127.0.0.1", port))?
         .run()
         .await
