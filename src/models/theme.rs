@@ -28,6 +28,7 @@ handlebars_helper!(date_format: |dt: NaiveDateTime,{fmt:str = "%Y-%m-%d"} | dt.f
 pub struct Theme<'a> {
     pub dir: String,
     reg: handlebars::Handlebars<'a>,
+    minify: bool,
 }
 
 impl Theme<'_> {
@@ -54,6 +55,7 @@ impl Theme<'_> {
         Ok(Theme {
             dir: String::from(dir),
             reg,
+            minify: true,
         })
     }
     pub fn render(
@@ -64,8 +66,15 @@ impl Theme<'_> {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let output_dir = std::path::Path::new(to_file).parent().unwrap();
         std::fs::create_dir_all(output_dir)?;
-        let mut output_file = std::fs::File::create(to_file)?;
-        self.reg.render_to_write(name, &vars, &mut output_file)?;
+        let html = self.reg.render(name, vars)?;
+        if self.minify {
+            use html_minifier::HTMLMinifier;
+            let mut html_minifier = HTMLMinifier::new();
+            html_minifier.digest(html).unwrap();
+            std::fs::write(to_file, html_minifier.get_html())?;
+        } else {
+            std::fs::write(to_file, html.as_bytes())?;
+        }
         Ok(())
     }
 }
