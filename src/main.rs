@@ -21,6 +21,8 @@ struct Cli {
 enum Commands {
     /// Init sample site project
     Init {},
+    /// Create new post or page
+    Create(cmd::CreateArgs),
     /// Build site
     Build(cmd::BuildArgs),
     /// Serve site and watch for changes
@@ -40,6 +42,9 @@ fn main() {
     match args.command {
         Commands::Init {} => {
             cmd::run_init();
+        }
+        Commands::Create(args) => {
+            cmd::run_create(args);
         }
         Commands::Build(args) => {
             cmd::run_build(args);

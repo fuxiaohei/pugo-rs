@@ -25,3 +25,11 @@ pub struct ServerArgs {
     #[clap(short = 'c', long)]
     pub clean: bool,
 }
+
+#[derive(Debug, Args)]
+pub struct CreateArgs {
+    #[clap(value_parser)]
+    pub path: String,
+    #[clap(short = 'p', long)]
+    pub page: bool,
+}
