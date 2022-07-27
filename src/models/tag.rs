@@ -31,3 +31,43 @@ impl Tag {
         values
     }
 }
+
+#[cfg(test)]
+mod post_tags_test {
+    use super::*;
+
+    #[test]
+    fn test_tags() {
+        let posts = vec![
+            models::Post {
+                meta: models::PostMetadata {
+                    tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
+                    ..models::PostMetadata::default()
+                },
+                ..Default::default()
+            },
+            models::Post {
+                meta: models::PostMetadata {
+                    tags: Some(vec!["tag2".to_string(), "tag3".to_string()]),
+                    ..models::PostMetadata::default()
+                },
+                ..Default::default()
+            },
+            models::Post {
+                meta: models::PostMetadata {
+                    tags: Some(vec!["tag2".to_string(), "tag1".to_string()]),
+                    ..models::PostMetadata::default()
+                },
+                ..Default::default()
+            },
+        ];
+        let url_config = models::UrlConfig::new();
+        let tags = Tag::parse(&posts, &url_config);
+        assert_eq!(tags.len(), 3); // tag1, tag2, tag3
+        assert_eq!(tags[0].name, "tag2"); // tag2 has the most posts
+        assert_eq!(tags[0].posts_index.len(), 3); // index of post1 and post2 and post3
+
+        assert_eq!(tags[1].name, "tag1");
+        assert_eq!(tags[1].posts_index.len(), 2); // index of post1, post3
+    }
+}

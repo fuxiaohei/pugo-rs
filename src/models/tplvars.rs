@@ -118,6 +118,7 @@ pub struct GlobalVars {
     pub posts: Option<Vec<PostVars>>,
     pub archives: Option<Vec<ArchiveVars>>,
     pub app: AppVars,
+    pub title: String,
 }
 
 impl GlobalVars {
@@ -155,6 +156,7 @@ impl GlobalVars {
                 version: crate_version!().to_string(),
                 repository: "https://github.com/fuxiaohei/pugo-rs".to_string(),
             },
+            title: "".to_string(),
         };
         vars.tags = Some(
             site.tags

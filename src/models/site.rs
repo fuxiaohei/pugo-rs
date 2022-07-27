@@ -126,6 +126,7 @@ impl Site<'_> {
             let output_file = self.config.build_dist_html_filepath(&p.slug_url, true);
             let mut template_vars = self.template_vars.get_global();
             template_vars.post = Some(self.template_vars.build_postvars(p));
+            template_vars.title = p.meta.title.clone();
 
             let dt = Utc.from_local_datetime(&p.datetime.unwrap()).unwrap();
             outputs.push(models::Output {
@@ -187,6 +188,7 @@ impl Site<'_> {
                 let mut template_vars = self.template_vars.get_global();
                 template_vars.pagination = Some(current_page.build_template_vars());
                 template_vars.current_tag = self.template_vars.get_tag(&tag.name);
+                template_vars.title = tag.name.clone();
 
                 // set post vars list
                 let mut posts_vars = Vec::new();
@@ -355,6 +357,7 @@ impl Site<'_> {
             let output_file = self.config.build_dist_html_filepath(&p.slug_url, true);
             let mut template_vars = self.template_vars.get_global();
             template_vars.page = Some(self.template_vars.build_postvars(p));
+            template_vars.title = p.meta.title.clone();
             let dt = Utc.from_local_datetime(&p.datetime.unwrap()).unwrap();
             outputs.push(models::Output {
                 visit_url: self.config.build_root_url(&p.slug_url),

@@ -121,5 +121,10 @@ mod tests {
         assert_eq!(page.current_url(), "/page/3");
         assert_eq!(page.previous_url(), "/page/2");
         assert_eq!(page.next_url(), "/page/4");
+
+        let vars = page.build_template_vars();
+        assert_eq!(vars.current_url, "/page/3");
+        assert_eq!(vars.prev_url, "/page/2");
+        assert_eq!(vars.next_url, "/page/4");
     }
 }

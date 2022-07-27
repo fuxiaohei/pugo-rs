@@ -63,6 +63,46 @@ impl Post {
         }
     }
 
+    pub fn parse_meta(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        // fill default values
+        if self.meta.slug.starts_with('/') {
+            self.meta.slug = self.meta.slug.strip_prefix('/').unwrap().to_string();
+        }
+        if self.meta.template.is_none() {
+            self.meta.template = Some("post.hbs".to_string());
+        }
+        if self.meta.comments.is_none() {
+            self.meta.comments = Some(true);
+        }
+        if self.meta.updated.is_none() {
+            self.meta.updated = Some(self.meta.date.clone());
+        }
+        if self.meta.tags.is_none() {
+            self.meta.tags = Some(vec![]); // fill empty slice to make sure other functions working
+        }
+
+        // parse time
+        self.datetime = Some(parse_time(self.meta.date.as_str())?);
+        self.updated_datetime = Some(parse_time(self.meta.updated.as_ref().unwrap().as_str())?);
+
+        // parse brief
+        let mut seperator_index = self.content_markdown.find("<!-- more -->").unwrap_or(0);
+        if seperator_index < 1 {
+            seperator_index = self.content_markdown.find("<!--more-->").unwrap_or(0);
+        }
+        if seperator_index > 0 {
+            self.brief_markdown = self
+                .content_markdown
+                .split_at(seperator_index)
+                .0
+                .trim()
+                .to_string();
+        } else {
+            self.brief_markdown = self.content_markdown.clone();
+        }
+        Ok(())
+    }
+
     pub fn from_str(content: &str) -> Result<Post, Box<dyn std::error::Error>> {
         let mut metadata_string = String::from("");
         let mut metadata_format = "yaml";
@@ -109,43 +149,7 @@ impl Post {
             post.meta = toml::from_str(metadata_string.as_str())?;
         }
         post.content_markdown = content_string.trim().to_string();
-
-        // fill default values
-        if post.meta.slug.starts_with('/') {
-            post.meta.slug = post.meta.slug.strip_prefix('/').unwrap().to_string();
-        }
-        if post.meta.template.is_none() {
-            post.meta.template = Some("post.hbs".to_string());
-        }
-        if post.meta.comments.is_none() {
-            post.meta.comments = Some(true);
-        }
-        if post.meta.updated.is_none() {
-            post.meta.updated = Some(post.meta.date.clone());
-        }
-        if post.meta.tags.is_none() {
-            post.meta.tags = Some(vec![]); // fill empty slice to make sure other functions working
-        }
-
-        // parse time
-        post.datetime = Some(parse_time(post.meta.date.as_str())?);
-        post.updated_datetime = Some(parse_time(post.meta.updated.as_ref().unwrap().as_str())?);
-
-        // parse brief
-        let mut seperator_index = post.content_markdown.find("<!-- more -->").unwrap_or(0);
-        if seperator_index < 1 {
-            seperator_index = post.content_markdown.find("<!--more-->").unwrap_or(0);
-        }
-        if seperator_index > 0 {
-            post.brief_markdown = post
-                .content_markdown
-                .split_at(seperator_index)
-                .0
-                .trim()
-                .to_string();
-        } else {
-            post.brief_markdown = post.content_markdown.clone();
-        }
+        post.parse_meta()?;
         Ok(post)
     }
 
@@ -246,7 +250,7 @@ mod post_tests {
     use super::*;
     use chrono::{Datelike, Timelike};
 
-    fn get_test_post_content() -> String {
+    fn create_test_post_content() -> String {
         let post_content = "---
 title: Deploy blog in Cloudflare Workers
 author: admin
@@ -261,9 +265,21 @@ Workers Sites leverages the power of Workers and Workers KV by allowing develope
         post_content.to_string()
     }
 
+    fn create_test_post_content_toml() -> String {
+        let post_content = "```toml
+title = \"Deploy blog in Cloudflare Workers 2\"
+author = \"admin\"
+date = \"2022-06-26 18:30:30\"
+tags = [ \"cloudflare\", \"blog\", \"workers\" ]
+slug = \"blog-cf-worker\"
+```
+Workers Sites leverages the power of Workers and Workers KV by allowing developers to upload their sites directly to the edge, and closer to the end users. <!--more--> Born on the edge, Workers Sites is what we think modern development on the web should look like, natively secure, fast, and massively scalable. Less of your time is spent on configuration, and more of your time is spent on your code, and content itself.";
+        post_content.to_string()
+    }
+
     #[test]
     fn test_parse_post() {
-        let post = Post::from_str(&get_test_post_content()).unwrap();
+        let mut post = Post::from_str(&create_test_post_content()).unwrap();
         assert_eq!(post.meta.title, "Deploy blog in Cloudflare Workers");
         assert_eq!(post.meta.slug, "blog-cf-worker");
         assert_eq!(post.meta.date, "2022-05-25 15:55:25");
@@ -287,19 +303,41 @@ Workers Sites leverages the power of Workers and Workers KV by allowing develope
         assert!(post.updated_datetime.unwrap().hour() == 15);
         assert!(post.updated_datetime.unwrap().minute() == 55);
         assert!(post.updated_datetime.unwrap().second() == 25);
+
+        // slug format
+        post.set_slug_url("aaa/:year/:month/:day/:slug");
+        assert_eq!(post.slug_url, "aaa/2022/05/25/blog-cf-worker");
     }
 
     #[test]
     fn test_parse_post_file() {
-        std::fs::write("test_post.md", &get_test_post_content()).unwrap();
+        // use toml format to test
+        std::fs::write("test_post.md", &create_test_post_content_toml()).unwrap();
         let post = Post::from_file("test_post.md").unwrap();
-        assert_eq!(post.meta.title, "Deploy blog in Cloudflare Workers");
-        assert_eq!(post.meta.date, "2022-05-25 15:55:25");
-        assert_eq!(post.content_markdown.len(), 423);
+        assert_eq!(post.meta.title, "Deploy blog in Cloudflare Workers 2");
+        assert_eq!(post.meta.date, "2022-06-26 18:30:30");
+        assert_eq!(post.content_markdown.len(), 421);
         assert_eq!(post.brief_markdown.len(), 155);
-        assert!(post.updated_datetime.unwrap().hour() == 15);
-        assert!(post.updated_datetime.unwrap().minute() == 55);
-        assert!(post.updated_datetime.unwrap().second() == 25);
+        assert!(post.updated_datetime.unwrap().hour() == 18);
+        assert!(post.updated_datetime.unwrap().minute() == 30);
+        assert!(post.updated_datetime.unwrap().second() == 30);
         std::fs::remove_file("test_post.md").unwrap();
+    }
+
+    #[test]
+    fn test_parse_post_dir() {
+        std::fs::create_dir_all("test_post_dir").unwrap();
+        std::fs::write("test_post_dir/post_one_1.md", &create_test_post_content()).unwrap();
+        std::fs::write(
+            "test_post_dir/post_one_2.md",
+            &create_test_post_content_toml(),
+        )
+        .unwrap();
+        let posts = Post::list_from_dir("test_post_dir").unwrap();
+        assert_eq!(posts.len(), 2);
+        assert_eq!(posts[0].meta.title, "Deploy blog in Cloudflare Workers 2");
+        assert_eq!(posts[1].meta.title, "Deploy blog in Cloudflare Workers");
+
+        std::fs::remove_dir_all("test_post_dir").unwrap();
     }
 }

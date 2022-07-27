@@ -262,13 +262,43 @@ mod tests {
     use super::*;
     #[test]
     fn test_config() {
-        let config = Config::default();
+        let mut config = Config::default();
         assert_eq!(config.get_posts_dir(), "source/posts");
         assert_eq!(config.get_pages_dir(), "source/pages");
         assert_eq!(config.build_post_uri("abc"), "source/posts/abc");
+        assert_eq!(config.build_page_uri("abc"), "source/pages/abc");
         assert_eq!(
             config.build_dist_html_filepath("abc", true),
             "dist/abc/index.html"
         );
+        assert_eq!(config.get_theme_dir(), "themes/default");
+
+        config.url.root = "blog".to_string();
+        assert_eq!(config.build_root_url("abc"), "/blog/abc");
+        assert_eq!(config.get_slug_link(), "/blog/:year/:month/:day/:slug");
+        assert_eq!(
+            config.build_full_url("abc"),
+            "http://localhost:19292/blog/abc"
+        );
+        assert_eq!(config.get_output_dir(true), "dist/blog");
+        assert_eq!(config.get_output_dir(false), "dist");
+        assert_eq!(
+            config.build_dist_filepath("abc.xml", true),
+            "dist/blog/abc.xml"
+        );
+
+        let assets_dirs = config.build_assets_dirs();
+        assert_eq!(assets_dirs.len(), 2);
+        assert_eq!(
+            assets_dirs.get("themes/default/static").unwrap(),
+            "dist/blog/static"
+        );
+        assert_eq!(
+            assets_dirs.get("source/assets").unwrap(),
+            "dist/blog/assets"
+        );
+
+        assert_eq!(config.get_author("abc").name, "abc");
+        assert_eq!(config.get_default_author().name, "author");
     }
 }

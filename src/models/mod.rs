@@ -8,6 +8,7 @@ pub use config::UrlConfig;
 
 mod post;
 pub use post::Post;
+pub use post::PostMetadata;
 
 mod theme;
 pub use theme::Theme;
