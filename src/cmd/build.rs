@@ -85,7 +85,7 @@ pub fn start_watching_dirs(dirs: &Vec<String>, sender: &Sender<String>) -> notif
     info!("Watching site");
     let (tx, rx) = std::sync::mpsc::channel();
 
-    let mut watcher = RecommendedWatcher::new(tx)?;
+    let mut watcher = RecommendedWatcher::new(tx, notify::Config::default())?;
     for dir in dirs {
         debug!("Watching source directory: {}", dir);
         watcher.watch(std::path::Path::new(&dir), RecursiveMode::Recursive)?;
