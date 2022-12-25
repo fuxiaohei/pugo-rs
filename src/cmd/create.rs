@@ -15,7 +15,7 @@ pub fn run_create(args: cmd::CreateArgs) {
     if args.page {
         content_dir = config.get_pages_dir();
     }
-    let slug = args.path.trim_end_matches(".md").replace("/", "-");
+    let slug = args.path.trim_end_matches(".md").replace('/', "-");
     let mut path = std::path::PathBuf::new();
     path.push(content_dir);
     path.push(args.path);
