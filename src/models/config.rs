@@ -146,7 +146,7 @@ impl Config {
 
     pub fn from_file(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let bytes = std::fs::read(path)?;
-        let cfg = toml::from_slice(&bytes)?;
+        let cfg = toml::from_str(&String::from_utf8_lossy(&bytes))?;
         Ok(cfg)
     }
 

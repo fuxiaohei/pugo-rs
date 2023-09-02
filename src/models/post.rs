@@ -107,37 +107,28 @@ impl Post {
         let mut metadata_string = String::from("");
         let mut metadata_format = "yaml";
         let mut content_string = String::from("");
-        let mut metadata_section_flag = false;
+        let mut metadata_section_flag = true;
         let mut content_lines = content.trim().lines();
         for line in content_lines.by_ref() {
-            // start with --- or ```toml , enter as metadata
-            if !metadata_section_flag {
-                if line == "---" {
-                    metadata_section_flag = true;
-                    continue;
-                } else if line == "```toml" {
-                    metadata_format = "toml";
-                    metadata_section_flag = true;
-                    continue;
-                }
-            }
-
+            // post begin with metadata section
             if metadata_section_flag {
-                // find --- again, metadata is end
-                if line == "---" && metadata_format == "yaml" {
-                    metadata_section_flag = false;
-                    metadata_string.push('\n');
+                if line == "```toml" {
+                    metadata_format = "toml";
                     continue;
                 }
-                if line == "```" && metadata_format == "toml" {
+                if line == "```yaml" {
+                    metadata_format = "yaml";
+                    continue;
+                }
+                if line == "---" || line == "```" {
                     metadata_section_flag = false;
-                    metadata_string.push('\n');
                     continue;
                 }
                 metadata_string.push_str(line);
                 metadata_string.push('\n');
                 continue;
             }
+
             // metadata is end, left lines are content
             content_string.push_str(line);
             content_string.push('\n');

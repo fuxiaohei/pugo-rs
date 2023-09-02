@@ -316,19 +316,19 @@ impl Site<'_> {
             let dt = Local.from_local_datetime(&post.datetime.unwrap()).unwrap();
             let full_link = self.config.build_full_url(&post.slug_url);
             let item = ItemBuilder::default()
-                .title(post.meta.title.clone())
-                .link(full_link)
-                .content(post.content_html.clone())
-                .pub_date(dt.to_rfc2822())
+                .title(Some(post.meta.title.clone()))
+                .link(Some(full_link))
+                .content(Some(post.content_html.clone()))
+                .pub_date(Some(dt.to_rfc2822()))
                 .build();
             items.push(item);
         }
         // build channel
         let channel = ChannelBuilder::default()
-            .title(self.config.site.title.as_str())
+            .title(self.config.site.title.clone())
             .link(self.config.build_full_url(""))
             .items(items)
-            .description(self.config.site.description.as_str())
+            .description(self.config.site.description.clone())
             .build();
 
         // set outputs
